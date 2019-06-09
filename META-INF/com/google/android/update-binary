@@ -1,0 +1,42 @@
+#!/sbin/sh
+OUTFD=$2
+ZIP=$3
+VA="/dev/block/bootdevice/by-name/vendor_a"
+VB="/dev/block/bootdevice/by-name/vendor_b"
+ui_print() {
+  echo -n -e "ui_print $1\n" > /proc/self/fd/$OUTFD
+  echo -n -e "ui_print\n" > /proc/self/fd/$OUTFD
+}
+
+
+ui_print "- Mounting /system"
+
+mount /system
+mount -o rw,remount /system
+mount -o rw,remount /system /system
+
+ui_print "Extracting files"
+
+cd /tmp
+mkdir bin
+cd bin
+unzip -o "$ZIP"
+
+TMP=$(pwd)
+MNT=$(pwd)/mntpls
+
+chmod 777 $(pwd)/mntpls
+
+ui_print "- Flashing Vendors"
+
+dd if=$TMP/vendor.img of=$VA
+
+dd if=$TMP/vendor.img of=$VB
+
+ui_print "- Unmounting mounts"
+$MNT /data ro
+$MNT /system ro
+
+umount /system
+
+ui_print "- Annnnd thats a wrap!"
